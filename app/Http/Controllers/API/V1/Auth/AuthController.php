@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
@@ -44,7 +45,7 @@ class AuthController extends Controller
     {
         $credentials = $request->only(['email', 'password']);
 
-        if (! $token = Auth::attempt($credentials)) {
+        if (! $token = JWTAuth::attempt($credentials)) {
             return $this->errorResponse('Invalid credentials', 401);
         }
 

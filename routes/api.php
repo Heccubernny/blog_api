@@ -5,40 +5,36 @@ use App\Http\Controllers\API\V1\Posts\PostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::middleware('auth:sanctum')->get('/user', fn (Request $request) => $request->user());
 
 
-Route::group(['prefix' => 'auth'], function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+Route::prefix('auth')->controller(AuthController::class)->group(function () {
+    Route::post('register', 'register')->name('auth.register');
+    Route::post('login', 'login')->name('auth.login');
 
     Route::middleware('auth:api')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('user', [AuthController::class, 'user']);
+        Route::post('logout', 'logout')->name('auth.logout');
+        Route::get('user', 'user')->name('auth.user');
     });
 });
 
 
-Route::middleware('auth:api')->group(function () {
-    Route::apiResource('posts', PostController::class);
+Route::controller(PostController::class)->prefix('posts')->group(function () {
+    Route::get('/', 'index')->name('posts.index');
+    Route::get('/{post}', 'show')->name('posts.show');
+});
 
-    Route::patch('posts/{post}/publish', [PostController::class, 'publish']);
-    Route::patch('posts/{post}/unpublish', [PostController::class, 'unpublish']);
 
-    Route::get('posts/trashed', [PostController::class, 'trashed']);
-    Route::patch('posts/{id}/restore', [PostController::class, 'restore']);
-    Route::delete('posts/{id}/force-delete', [PostController::class, 'forceDelete']);
+Route::middleware('auth:api')->prefix('posts')->controller(PostController::class)->group(function () {
+    Route::get('/trashed', 'trashed')->name('posts.trashed');
+    Route::patch('/{id}/restore', 'restore')->name('posts.restore');
+    Route::delete('/{id}/force-delete', 'forceDelete')->name('posts.forceDelete');
+    Route::patch('/{post}/publish', 'publish')->name('posts.publish');
+    Route::patch('/{post}/unpublish', 'unpublish')->name('posts.unpublish');
+
+    Route::post('/', 'store')->name('posts.store');
+    Route::put('/{post}', 'update')->name('posts.update');
+    Route::patch('/{post}', 'update');
+    Route::delete('/{post}', 'destroy')->name('posts.destroy');
 });

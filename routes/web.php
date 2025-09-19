@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', fn () => view('posts.index'));
+Route::get('/posts/{id}', fn () => view('posts.show'));
+
+// Auth
+Route::get('/login', fn () => view('auth.login'))->name('login');
+Route::get('/register', fn () => view('auth.register'));
+Route::get('/author/dashboard', fn () => view('authors.dashboard'));
+Route::get('/author/posts', fn () => view('authors.posts'));

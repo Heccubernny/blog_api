@@ -13,5 +13,5 @@ if (!function_exists('authorizePost')) {
         }
         return true;
     }
-
 }
+

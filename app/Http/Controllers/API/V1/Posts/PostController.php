@@ -48,12 +48,10 @@ class PostController extends Controller
             });
         }
 
-        // Optional filter by created_at
         if ($request->filled('from') && $request->filled('to')) {
             $query->whereBetween('created_at', [$request->from, $request->to]);
         }
 
-        // Paginate Posts results
         $posts = $query->latest()->paginate($request->get('per_page', 10));
 
         return $this->successResponse(
@@ -92,7 +90,7 @@ class PostController extends Controller
             return $this->errorResponse('You are not allowed to view this draft', 403);
         }
 
-        return $this->successResponse(new PostResource($post), 'Post retrieved');
+        return $this->successResponse(new PostResource($post->load('user')), 'Post retrieved');
 
     }
 
@@ -107,7 +105,6 @@ class PostController extends Controller
     {
 
         authorizePost($post);
-
         $post->update($request->validated());
         return $this->successResponse(new PostResource($post), 'Post updated successfully');
 
@@ -123,7 +120,6 @@ class PostController extends Controller
     {
 
         authorizePost($post);
-
 
         $post->delete();
         return $this->successResponse(null, 'Post deleted successfully');
@@ -159,14 +155,14 @@ class PostController extends Controller
     public function trashed()
     {
         $posts = Post::onlyTrashed()
-            ->where('user_id', auth()->id())
-            ->latest()
-            ->paginate(10);
+        ->where('user_id', auth()->id())
+        ->latest()
+        ->paginate(10);
 
         return $this->successResponse(
-            PostResource::collection($posts)->response()->getData(true),
-            'Trashed posts fetched successfully'
-        );
+        PostResource::collection($posts)->response()->getData(true),
+        'Trashed posts fetched successfully'
+    );
     }
 
     public function restore($id)
