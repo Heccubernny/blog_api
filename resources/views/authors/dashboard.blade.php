@@ -31,8 +31,8 @@
         <div class="col-md-4">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body text-center">
-                    <i class="bi bi-trash3 display-5 text-danger"></i>
-                    <h5 class="mt-3 fw-semibold">Trashed</h5>
+                    <i class="bi bi-pen display-5 text-warning"></i>
+                    <h5 class="mt-3 fw-semibold">Drafted</h5>
                     <h2 id="trashed-posts" class="fw-bold">0</h2>
                 </div>
             </div>
@@ -50,15 +50,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    const API_BASE = "{{ $API_BASE }}";
+    async function loadDashboard({mine = false} = {}) {
+
+        try {
+        const API_BASE = "{{ $API_BASE }}";
     const token = localStorage.getItem("token");
 
     if (!token) {
         window.location.href = "/login"; 
     }
 
-    async function loadDashboard() {
-        try {
             let userRes = await fetch(`${API_BASE}/auth/user`, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -69,37 +70,48 @@
 
             document.getElementById('greeting').textContent = `Welcome, ${user.data?.name ?? 'Author'}`;
 
+             let url = `${API_BASE}/posts`;
+
+    if (mine) {
+        url += "?mine=true";
+    }
             // Fetch posts
-            let postsRes = await fetch(`${API_BASE}/posts?per_page=10`, {
+            let postsRes = await fetch(url, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Accept": "application/json"
                 }
             });
             let posts = await postsRes.json();
+            const hasPosts = posts.data?.has_posts ?? false;
+            if (mine && !hasPosts) {
+                console.log("User has no posts, showing all posts instead");
+                return loadDashboard({ mine: false });
+            }
             // Filter user’s posts
-            let myPosts = posts.data?.data?.filter(p => p.author.id === user.data?.id) ?? [];
+            let myPosts = (hasPosts ? posts.data?.data?.data ?? [] : []);
 
             let totalPosts = myPosts.length;
             let publishedPosts = myPosts.filter(p => p.status === "published").length;
-            let trashedPosts = myPosts.filter(p => p.deleted_at !== null).length;
+            let draftedPosts = myPosts.filter(p => p.status !== "published").length;
+
 
             document.getElementById('total-posts').textContent = totalPosts;
             document.getElementById('published-posts').textContent = publishedPosts;
-            document.getElementById('trashed-posts').textContent = trashedPosts;
+            document.getElementById('trashed-posts').textContent = draftedPosts;
 
             const ctx = document.getElementById('postsChart').getContext('2d');
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Published', 'Drafts', 'Trashed'],
+                    labels: ['Published', 'Drafts'],
                     datasets: [{
                         data: [
                             publishedPosts,
-                            myPosts.filter(p => p.status === "draft").length,
-                            trashedPosts
+                            // myPosts.filter(p => p.status === "draft").length,
+                            draftedPosts
                         ],
-                        backgroundColor: ['#198754', '#6c757d', '#dc3545']
+                        backgroundColor: ['#198754', '#6c757d']
                     }]
                 },
                 options: {
@@ -116,4 +128,5 @@
 
     loadDashboard();
 </script>
+@stack('scripts')
 @endsection

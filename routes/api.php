@@ -2,9 +2,9 @@
 
 use App\Http\Controllers\API\V1\Auth\AuthController;
 use App\Http\Controllers\API\V1\Posts\PostController;
+use Heccubernny\ActivityTracker\Middleware\LogRouteActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 
 Route::middleware('auth:sanctum')->get('/user', fn (Request $request) => $request->user());
 
@@ -23,6 +23,8 @@ Route::prefix('auth')->controller(AuthController::class)->group(function () {
 Route::controller(PostController::class)->prefix('posts')->group(function () {
     Route::get('/', 'index')->name('posts.index');
     Route::get('/{post}', 'show')->name('posts.show');
+
+    // ->middleware([LogRouteActivity::class . ':view post,' . '$post']);
 });
 
 
@@ -33,7 +35,8 @@ Route::middleware('auth:api')->prefix('posts')->controller(PostController::class
     Route::patch('/{post}/publish', 'publish')->name('posts.publish');
     Route::patch('/{post}/unpublish', 'unpublish')->name('posts.unpublish');
 
-    Route::post('/', 'store')->name('posts.store');
+    Route::post('/', 'store')->name('posts.store')->middleware('activity.log:store-new-post');
+    ;
     Route::put('/{post}', 'update')->name('posts.update');
     Route::patch('/{post}', 'update');
     Route::delete('/{post}', 'destroy')->name('posts.destroy');

@@ -132,52 +132,67 @@
     const API_BASE = "{{ $API_BASE }}";
     const token = localStorage.getItem("token");
 
-    if (!token) {
-        window.location.href = "/login";
+   async function loadPosts({mine = false} = {}) {
+    let url = `${API_BASE}/posts`;
+
+    if (mine) {
+        url += "?mine=true";
     }
 
-    async function loadPosts({ mine = true } = {}) {
-        let url = `${API_BASE}/posts`;
-        if (mine) url += "?mine=true";
-        let res = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
-        let posts = await res.json();
+    let res = await fetch(url, {
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json"
+            
+        }
+    });
 
-        let tbody = document.querySelector("#posts-table");
-        tbody.innerHTML = "";
-        (posts.data?.data ?? []).forEach(post => {
-            tbody.innerHTML += `
-                <tr>
-                    <td class="fw-semibold">${post.title}</td>
-                    <td>
-                        <span class="badge ${post.status === 'published' ? 'bg-success' : 'bg-secondary'}">
-                            ${post.status}
-                        </span>
-                    </td>
-                    <td>${new Date(post.created_at).toLocaleDateString()}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editPost(${post.id})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="viewPost(${post.id})">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deletePost(${post.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
+    let result = await res.json();
+
+    const hasPosts = result.data?.has_posts ?? false;
+
+    if (mine && !hasPosts) {
+        console.log("User has no posts, showing all posts instead");
+        return loadPosts({ mine: false });
     }
-    
+
+    const posts = result.data?.data?.data;
+    let tbody = document.querySelector("#posts-table");
+    tbody.innerHTML = "";
+
+    (posts ?? []).forEach(post => {
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-semibold">${post.title}</td>
+                <td>
+                    <span class="badge ${post.status === 'published' ? 'bg-success' : 'bg-secondary'}">
+                        ${post.status}
+                    </span>
+                </td>
+                <td>${new Date(post.created_at).toLocaleDateString()}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editPost(${post.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="viewPost(${post.id})">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deletePost(${post.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+ 
     async function loadTrashed() {
-        let res = await fetch(`${API_BASE}/posts/trashed`, { headers: { "Authorization": `Bearer ${token}` } });
+        let res = await fetch(`${API_BASE}/posts/trashed`, { headers: { "Authorization": `Bearer ${token}`,  "Accept": "application/json" } });
         let posts = await res.json();
 
         let tbody = document.querySelector("#trashed-table");
         tbody.innerHTML = "";
 
-        console.log(posts);
         (posts.data ?? []).forEach(post => {
             tbody.innerHTML += `
                 <tr>

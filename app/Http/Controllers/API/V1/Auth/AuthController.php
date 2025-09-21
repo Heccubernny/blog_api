@@ -25,10 +25,14 @@ class AuthController extends Controller
                 'password' => bcrypt($request->password),
             ]);
 
-            $token = Auth::attempt([
+            $token = JWTAuth::attempt([
                 'email'    => $request->email,
                 'password' => $request->password,
             ]);
+
+            $user = JWTAuth::user();
+
+            Auth::guard('web')->login($user);
 
             return $this->successResponse([
                 'user'  => new UserResource($user),
@@ -49,8 +53,12 @@ class AuthController extends Controller
             return $this->errorResponse('Invalid credentials', 401);
         }
 
+        $user = JWTAuth::user();
+        Auth::guard('web')->login($user);
+
+
         return $this->successResponse([
-            'user'  => new UserResource(Auth::user()),
+            'user'  => new UserResource($user),
             'token' => $token,
             'type'  => 'bearer',
         ], 'Login successful');
@@ -58,13 +66,17 @@ class AuthController extends Controller
 
     public function user()
     {
-        return $this->successResponse(new UserResource(Auth::user()), 'Current user');
+
+        $user = Auth::guard('web')->user() ?? Auth::guard('api')->user();
+
+        return $this->successResponse(new UserResource($user), 'Current user');
     }
 
     public function logout()
     {
         try {
-            Auth::logout();
+            Auth::guard('web')->logout();
+            Auth::guard('api')->logout();
             return $this->successResponse(null, 'Logged out successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Logout failed', 500, $e->getMessage());

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('posts.index'));
 Route::get('/posts/{id}', fn () => view('posts.show'));
+;
 
 // Auth
 Route::get('/login', fn () => view('auth.login'))->name('login');

@@ -11,7 +11,6 @@ async function loadPost() {
     let res = await fetch(`${API_BASE}/posts/${postId}`);
     let data = await res.json();
     let postDiv = document.getElementById('post');
-console.log(data.data)
     postDiv.innerHTML = `
         <div class="card">
             <div class="card-body">
